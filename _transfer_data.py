@@ -1,8 +1,9 @@
+import pymysql, time
 from _tools import *
 import csv
 
 def transfer_colonies(db_target):
-    print("Transferring colonies...", end="")
+    print(f"{time.asctime()} | Transferring colonies...", end="")
     colonies = [['SEA', 'At sea', 'Somewhere in the Southern Ocean'],
                     ['BDM', 'Crozet', 'Baie du marin'],
                     ['CDC', 'Crozet', 'Crique de la Chaloupe'],
@@ -15,7 +16,7 @@ def transfer_colonies(db_target):
     print("done.")
 
 def transfer_antennas(db_target):
-    print("Transferring antennas...", end="")
+    print(f"{time.asctime()} | Transferring antennas...", end="")
     antennas = [['BretelleSud_Mer', 'Bretelle sud Mer', 'BDM', 'Mer'],
                 ['BretelleSud_Terre', 'Bretelle sud Terre', 'BDM', 'Terre'],
                 ['Autoroute_Mer', 'Autoroute Mer', 'BDM', 'Mer'],
@@ -29,7 +30,7 @@ def transfer_antennas(db_target):
     print("done.")
 
 def transfer_locations(db_source, db_target):
-    print("Transferring locations...", end="")
+    print(f"{time.asctime()} | Transferring locations...", end="")
     loc_names = [x[0] for x in db_source.fetchall("SELECT nom FROM lieux_transpondage;")]
     colony = ["RAT" if any(x == i for i in ("Guetteur", "Lac", "Ratmanoff")) else "BDM" for x in loc_names]
     locs = dict(zip(loc_names, colony))
@@ -45,21 +46,21 @@ def transfer_locations(db_source, db_target):
     print("done.")
 
 def transfer_handlers(db_source, db_target):
-    print("Transferring handlers...", end="")
+    print(f"{time.asctime()} | Transferring handlers...", end="")
     handlers = db_source.fetchall("SELECT nom, description FROM manipulateurs;")
     for h in handlers:
         db_target.execute(f"INSERT INTO handlers (name, description) VALUES ('{h[0]}', '{h[1]}');")
     print("done.")
 
 def transfer_manip_classes(db_target):
-    print("Transferring manipulation classes...", end="")
+    print(f"{time.asctime()} | Transferring manipulation classes...", end="")
     class_list = ["Puli", "EarlyLate", "FIDH", "Other", "OtherPrograms", "Tests"]
     for i in class_list:
         db_target.execute(f"INSERT INTO manip_classes (class) VALUES ('{i}');")
     print("done.")
 
 def transfer_manip(db_target):
-    print("Transferring manipulations...", end="")
+    print(f"{time.asctime()} | Transferring manipulations...", end="")
     csv_file = csv.reader(open("csv_files/manipulations_possibles.csv"))
     next(csv_file)
     for row in csv_file:
@@ -67,7 +68,7 @@ def transfer_manip(db_target):
     print("done.")
 
 def transfer_stage(db_source, db_target):
-    print("Transferring stage...", end="")
+    print(f"{time.asctime()} | Transferring stage...", end="")
     stages = db_source.fetchall("SELECT age, description FROM stade_transpondage;")
     for i, s in enumerate(stages):
         if s[0].startswith("A-"):
@@ -81,7 +82,7 @@ def transfer_stage(db_source, db_target):
     print("done.")
 
 def transfer_alarms(db_target):
-    print("Transferring alarms...", end="")
+    print(f"{time.asctime()} | Transferring alarms...", end="")
     alarms = [["CAPTURE", "Catch the bird if leaving colony"],
               ["FOLLOW", "Follow bird if entering colony"],
               ["VISUAL CONTROL", "Check body condition"]]
@@ -90,7 +91,7 @@ def transfer_alarms(db_target):
     print("done.")
 
 def transfer_event_classes(db_target):
-    print("Transferring event classes...", end="")
+    print(f"{time.asctime()} | Transferring event classes...", end="")
     events = [['Capture', 'The bird was captured and handled'],
          ['Visual control', 'An observation without handling'],
          ['Marking', 'The bird was marked without capture']]
@@ -99,7 +100,7 @@ def transfer_event_classes(db_target):
     print("done.")
 
 def transfer_event_types(db_target):
-    print("Transferring event types...", end="")
+    print(f"{time.asctime()} | Transferring event types...", end="")
     events = [['Capture','Pit-tagging'],
               ['Capture','Fish-tagging'],
               ['Capture','Recapture'],
@@ -111,7 +112,7 @@ def transfer_event_types(db_target):
     print("done.")
 
 def transfer_measure_types(db_source, db_target):
-    print("Transferring measure types...", end="")
+    print(f"{time.asctime()} | Transferring measure types...", end="")
     measures = [list(x) for x in db_source.fetchall("SELECT class, var, unit, description FROM measure_types;")]
     measures += [['marking','visual identity','cat','One or two flipper bands'],
                   ['rfid_data', 'rfid_packing', 'cat', 'Packing of pits before being implanted'],
@@ -128,10 +129,10 @@ def transfer_measure_types(db_source, db_target):
     print("done.")
 
 def transfer_birds(db_source, db_target):
-    print("Transferring birds:")
+    print(f"{time.asctime()} | Transferring birds:")
     birds = db_source.fetchall("SELECT * FROM animaux where supprime = 0;")
     n_birds = len(birds)
-    print(f"- loaded data for {n_birds} individuals")
+    print(f"\t- loaded data for {n_birds} individuals")
     for i, b in enumerate(birds):
         rfid = f"'{b[1]}'"
         name = f"'TEST_{b[1][-12:]}'" if b[3].startswith("TEST") else f"'{b[3]}'"
@@ -181,7 +182,7 @@ def transfer_birds(db_source, db_target):
 
         db_target.execute(f"INSERT INTO birds (rfid, name, sex, birth_year, birth_year_type, rfid_date, ft_date, current_loc, last_detection, alarm, death_date, dead, ring_number, rfid_stage) VALUES ({rfid},{name},{sex},{birth_year},{birth_year_type},{rfid_date},{ft_date},{current_loc},{last_detection},{alarm},{death_date},{dead},{ring_number},{rfid_stage});")
 
-        print(f"- {round((i/n_birds)*100)}% completed ({i} birds)\r", end="")
+        print(f"\t- {round((i/n_birds)*100)}% completed ({i} birds)\r", end="")
 
         # Insert the corresponding events:
         rfid_packing = f"'{b[29]}'"
@@ -206,39 +207,49 @@ def transfer_birds(db_source, db_target):
                 db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_packing',{rfid_packing});")
             if rfid_desinfectant != "'N/A'":
                 db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_desinfectant',{rfid_desinfectant});")
-
     print("\ndone.")
 
-
-
-### For the moment only transfer of measure related to the date of pit-tagging (or fish-tagging for dead chicks)
-def transfer_measures (old_db, new_db):
-    query_selection = "SELECT * FROM measures"
-    old_data = execute_fetchall(query_selection, old_db)
-    for i in old_data:
-        rfid = i[1]
-        date = i[3]
-        event = (execute_fetchall("SELECT id FROM events where rfid = '{}' and event_date = '{}'".format(rfid, date), new_db))
+def transfer_measures(db_source, db_target):
+    print(f"{time.asctime()} | Transferring measures...")
+    measures = db_source.fetchall("SELECT * FROM measures;")
+    n_measures = len(measures)
+    print(f"\t- loaded {n_measures} data points")
+    for i, m in enumerate(measures):
+        print(f"\t- {round((i / n_measures) * 100)}% completed ({i} data points)\r", end="")
+        event = db_target.fetchall(f"SELECT id FROM events where rfid = '{m[1]}' and event_date = '{m[3]}';")
         if event:
             event_id = event[0][0]
-            execute_commit("INSERT INTO measures (event_id, name, value, raw_value) VALUES ({},'{}','{}','{}')".format(event_id, i[2], i[4], i[5]), new_db)
+            db_target.execute(f"INSERT INTO measures (event_id, name, value, raw_value) VALUES ({event_id},'{m[2]}','{m[4]}','{m[5]}');")
+        else:
+            try:
+                # create an event
+                handler = f"'{m[6]}'" if m[6] else 'NULL'
+                db_target.execute(f"INSERT INTO events (rfid, event_date, event_type, stage, handler) VALUES ('{m[1]}','{m[3]}','Recapture','Ukn', {handler});")
+                event_id = db_target.last_id()
+                db_target.execute(f"INSERT INTO measures (event_id, name, value, raw_value) VALUES ({event_id},'{m[2]}','{m[4]}','{m[5]}');")
+            except pymysql.err.IntegrityError:
+                pass
+    print("\ndone.")
 
-
-
-def transfer_comments(old_db, new_db):
-    query_selection = "SELECT * FROM commentaire"
-    old_data = execute_fetchall(query_selection, old_db)
-    for old in old_data:
-        if (old[2] is not None) and (old[2] != "test") and (old[2] != "N/A") and (old[2] != ""):
-            comm = '"{}"'.format(str(old[2].replace('"', "")))
-            rfid = "'{}'".format(old[1])
-            date = 'NULL' if missing_data(old[4]) else "'{}'".format(str(old[4]))
-            if execute_fetchall("SELECT identifiant_transpondeur FROM animaux where identifiant_transpondeur = {} and supprime = 0".format(rfid), old_db):
-                query_insertion = "INSERT INTO comments (rfid, comment, handler, date) VALUES ({},{},{},{})".format(rfid, comm, "'N/A'", date)
-                exe = execute_commit(query_insertion, new_db)
-                if exe != "ok":
-                    print(exe.args[1] + " : " + rfid + " " + comm + " non insere dans la nouvelle base de donnee")
-
+def transfer_comments(db_source, db_target):
+    print(f"{time.asctime()} | Transferring comments...")
+    comments = db_source.fetchall("SELECT * FROM commentaire;")
+    n_comments = len(comments)
+    print(f"\t- loaded {n_comments} comments")
+    for i, c in enumerate(comments):
+        print(f"\t- {round((i / n_comments) * 100)}% completed ({i} comments)\r", end="")
+        if c[2] is not None and not any(x == c[2] for x in ("test", "N/A", "")):
+            comment = c[2].replace('"', "").replace("'", "")
+            date = 'NULL' if missing_data(c[4]) else f"'{c[4]}'"
+            try:
+                # print(c)
+                sql = f"INSERT INTO comments (rfid, comment, handler, date) VALUES ('{c[1]}','{comment}', 'N/A',{date});"
+                # print(sql)
+                db_target.execute(sql)
+            except pymysql.err.IntegrityError:
+                # print(f"Individual {c[1]} does not exist")
+                pass
+    print("done.")
 
 
 def transfer_creation_detection(new_db, old_db_name):
@@ -269,31 +280,32 @@ def transfer_creation_detection(new_db, old_db_name):
 
 
 
-def transfer_bird_manips(old_db, new_db):
-    query_selection = "SELECT * FROM manipulations where manipulations_possibles_id != '' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0) " \
-                      "and manipulations_possibles_id in (SELECT nom from manipulations_possibles where supprime = 0)"
-    old_data = execute_fetchall(query_selection, old_db)
-    for old in old_data:
-        rfid = "'{}'".format(old[1])
-        manip = "'{}'".format(old[2])
-        comment = "NULL" if missing_data(old[3]) else "'{}'".format(old[3])
-        query_insertion = "INSERT INTO bird_manips (rfid, manip, comment) VALUES ({},{},{}) ON DUPLICATE KEY UPDATE rfid = rfid".format(rfid,manip,comment)
-        exe = execute_commit(query_insertion, new_db)
-        if exe != "ok":
-            print(exe.args[1] + " : " + rfid + " " + manip + " non insere dans la base de donnee")
+def transfer_bird_manips(db_source, db_target):
+    print(f"{time.asctime()} | Transferring birds manipulations...")
+    manips = db_source.fetchall("SELECT * FROM manipulations where manipulations_possibles_id != '' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0) and manipulations_possibles_id in (SELECT nom from manipulations_possibles where supprime = 0);")
+    n_manips = len(manips)
+    print(f"\t- loaded {n_manips} manips")
+    for i, m in enumerate(manips):
+        print(f"\t- {round((i / n_manips) * 100)}% completed ({i} manips)\r", end="")
 
+        rfid = "'{}'".format(m[1])
+        manip = "'{}'".format(m[2])
+        comment = "NULL" if missing_data(m[3]) else "'{}'".format(m[3])
+        db_target.execute("INSERT INTO bird_manips (rfid, manip, comment) VALUES ({},{},{}) ON DUPLICATE KEY UPDATE rfid = rfid;") #.format(rfid,manip,comment)
 
-## cycling-types = ponctual event date -> arrival, brooding date, creching date, moult date,
-def transfer_cycling_types(new_db):
-    a = [['arrival', 'Date of arrival in the colony for the first time after winter'],
-         ['breeding', 'Date of the start of the breeding shift in colony'],
-         ['laying', 'Date of laying'],
-         ['brooding', 'Date of the start of brooding period (= hatching date)'],
-         ['creching', 'Date of the start of creching period'],
-         ['moult', 'Date of the start of moult shift']]
-    for x in a:
-        query_insertion = "INSERT INTO phenology_types (name, description) VALUES ('{}','{}')".format(x[0],x[1])
-        execute_commit(query_insertion, new_db)
+        print("done.")
+
+def transfer_cycling_types(db_target):
+    print(f"{time.asctime()} | Transferring cycling types...", end="")
+    cycles = [['arrival', 'Date of arrival in the colony for the first time after winter'],
+             ['breeding', 'Date of the start of the breeding shift in colony'],
+             ['laying', 'Date of laying'],
+             ['brooding', 'Date of the start of brooding period (= hatching date)'],
+             ['creching', 'Date of the start of creching period'],
+             ['moult', 'Date of the start of moult shift']]
+    for c in cycles:
+        db_target.execute(f"INSERT INTO phenology_types (name, description) VALUES ('{c[0]}','{c[1]}');")
+    print("done.")
 
 def transfer_cycling(old_db, new_db):
     query_selection = "SELECT * FROM `evenements` WHERE `date_debut` != '0000-00-00 00:00:00' AND `date_fin` != '0000-00-00 00:00:00' AND supprime = 0 and evenements_possibles_id = 'Breeding' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0)"

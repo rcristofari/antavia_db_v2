@@ -181,7 +181,7 @@ create_phenology = "CREATE TABLE IF NOT EXISTS phenology(" \
 create_comments = "CREATE TABLE IF NOT EXISTS comments(" \
             "id int(10) PRIMARY KEY AUTO_INCREMENT," \
             "rfid varchar(64) NOT NULL," \
-            "comment varchar(255) NOT NULL," \
+            "comment TEXT NOT NULL," \
             "handler varchar(64) NOT NULL," \
             "date datetime," \
             "CONSTRAINT FK_comments_REF_birds " \
