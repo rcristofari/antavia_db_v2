@@ -254,7 +254,7 @@ def transfer_creation_detection(db_source, db_target, source):
                     "id INT AUTO_INCREMENT PRIMARY KEY " \
                 ") AS " \
                     "SELECT " \
-                        "DISTNCT animaux.identifiant_transpondeur AS rfid, " \
+                        "DISTINCT animaux.identifiant_transpondeur AS rfid, " \
                         "CAST(antenne_id AS SIGNED) AS antenna_id, " \
                         "date_arrivee AS dtime, " \
                         "'fixed' AS type " \
