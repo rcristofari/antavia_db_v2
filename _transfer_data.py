@@ -249,36 +249,32 @@ def transfer_comments(db_source, db_target):
             except pymysql.err.IntegrityError:
                 # print(f"Individual {c[1]} does not exist")
                 pass
+    print("\ndone.")
+
+def transfer_creation_detection(db_source, db_target, source):
+    print(f"{time.asctime()} | Transferring detections...", end="")
+    query = "CREATE TABLE detections (" \
+                    "id INT AUTO_INCREMENT PRIMARY KEY " \
+                ") AS " \
+                    "SELECT " \
+                        "DISTNCT animaux.identifiant_transpondeur AS rfid, " \
+                        "CAST(antenne_id AS SIGNED) AS antenna_id, " \
+                        "date_arrivee AS dtime, " \
+                        "'fixed' AS type " \
+                    "FROM " + source + ".detections " \
+                        "INNER JOIN " + source + ".animaux " \
+                        "ON detections.animaux_id = animaux.id " \
+                    "WHERE detections.supprime = 0 " \
+                        "AND detections.detection_type = 'ORIGINAL' " \
+                        "AND animaux.supprime = 0;"
+    db_target.execute(query)
     print("done.")
-
-
-def transfer_creation_detection(new_db, old_db_name):
-    query = "CREATE TABLE detections (id INT AUTO_INCREMENT PRIMARY KEY, FOREIGN KEY (rfid) REFERENCES birds(rfid), FOREIGN KEY (antenna_id) REFERENCES antennas(id)) AS " \
-            "SELECT DISTINCT animaux.identifiant_transpondeur as rfid, CAST(antenne_id AS SIGNED) as antenna_id, date_arrivee as dtime, 'fix' as type " \
-            "FROM "+old_db_name+".detections inner join "+old_db_name+".animaux on detections.animaux_id = animaux.id " \
-            "WHERE detections.supprime = 0 and detections.detection_type = 'ORIGINAL' and animaux.supprime = 0"
-    exe = execute_commit(query, new_db)
-    if exe != "ok":
-        print(exe.args[1])
-    query_table = "ALTER TABLE detections ADD FOREIGN KEY (rfid) REFERENCES birds(rfid)"
-    exe = execute_commit(query_table, new_db)
-    if exe != "ok":
-        print(exe.args[1])
-    query_table = "ALTER TABLE detections ADD FOREIGN KEY (antenna_id) REFERENCES antennas(id)"
-    exe = execute_commit(query_table, new_db)
-    if exe != "ok":
-        print(exe.args[1])
-    query_index = "ALTER TABLE detections ADD INDEX dtime (rfid ASC, dtime ASC)"
-    exe = execute_commit(query_index, new_db)
-    if exe != "ok":
-        print(exe.args[1])
-    query_last_detection = "UPDATE birds as targetTable, (SELECT rfid, max(dtime) as lastdetection FROM detections group by rfid) sourceTable " \
-                           "SET targetTable.last_detection = sourceTable.lastdetection WHERE targetTable.rfid = sourceTable.rfid"
-    exe = execute_commit(query_last_detection, new_db)
-    if exe != "ok":
-        print(exe.args[1])
-
-
+    print(f"{time.asctime()} | Indexing detections...", end="")
+    db_target.execute("ALTER TABLE detections ADD FOREIGN KEY (rfid) REFERENCES birds(rfid);")
+    db_target.execute("ALTER TABLE detections ADD FOREIGN KEY (antenna_id) REFERENCES antennas(id);")
+    db_target.execute("ALTER TABLE detections ADD INDEX dtime (rfid ASC, dtime ASC);")
+    db_target.execute("UPDATE birds as targetTable, (SELECT rfid, max(dtime) as lastdetection FROM detections group by rfid) sourceTable SET targetTable.last_detection = sourceTable.lastdetection WHERE targetTable.rfid = sourceTable.rfid;")
+    print("done.")
 
 def transfer_bird_manips(db_source, db_target):
     print(f"{time.asctime()} | Transferring birds manipulations...")
@@ -287,13 +283,9 @@ def transfer_bird_manips(db_source, db_target):
     print(f"\t- loaded {n_manips} manips")
     for i, m in enumerate(manips):
         print(f"\t- {round((i / n_manips) * 100)}% completed ({i} manips)\r", end="")
-
-        rfid = "'{}'".format(m[1])
-        manip = "'{}'".format(m[2])
-        comment = "NULL" if missing_data(m[3]) else "'{}'".format(m[3])
-        db_target.execute("INSERT INTO bird_manips (rfid, manip, comment) VALUES ({},{},{}) ON DUPLICATE KEY UPDATE rfid = rfid;") #.format(rfid,manip,comment)
-
-        print("done.")
+        comment = 'NULL' if missing_data(m[3]) else f"'{m[3]}'"
+        db_target.execute(f"INSERT INTO bird_manips (rfid, manip, comment) VALUES ('{m[1]}','{m[2]}',{comment}) ON DUPLICATE KEY UPDATE rfid = rfid;")
+    print("\ndone.")
 
 def transfer_cycling_types(db_target):
     print(f"{time.asctime()} | Transferring cycling types...", end="")
@@ -307,15 +299,14 @@ def transfer_cycling_types(db_target):
         db_target.execute(f"INSERT INTO phenology_types (name, description) VALUES ('{c[0]}','{c[1]}');")
     print("done.")
 
-def transfer_cycling(old_db, new_db):
-    query_selection = "SELECT * FROM `evenements` WHERE `date_debut` != '0000-00-00 00:00:00' AND `date_fin` != '0000-00-00 00:00:00' AND supprime = 0 and evenements_possibles_id = 'Breeding' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0)"
-    old_data = execute_fetchall(query_selection, old_db)
-    for old in old_data:
-        rfid= "'{}'".format(old[2])
-        season = "'{}'".format(determine_year(old[4]))
-        start_dtime = "'{}'".format(old[4])
-        end_dtime = "'{}'".format(old[5])
-        comment = '"{}"'.format(old[6]) if not missing_data(old[6]) else "NULL"
-        value = "'S'" if old[3] == "Succes" else "'F'"
-        query_insertion_breeding = "INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ({},{},{},{},{},{})".format(rfid, season, value, start_dtime, end_dtime, comment)
-        execute_commit(query_insertion_breeding, new_db)
+def transfer_cycling(db_source, db_target):
+    print(f"{time.asctime()} | Transferring cycles...")
+    cycling = db_source.fetchall("SELECT * FROM evenements WHERE date_debut > '1970-01-01' AND date_fin > '1970-01-01' AND supprime = 0 and evenements_possibles_id = 'Breeding' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0);")
+    n_cycles = len(cycling)
+    print(f"\t- loaded {n_cycles} cycles")
+    for i, c in enumerate(cycling):
+        print(f"\t- {round((i / n_cycles) * 100)}% completed ({i} cycles)\r", end="")
+        comment = f"'{c[6]}'" if not missing_data(c[6]) else 'NULL'
+        value = "S" if c[3] == "Succes" else "F"
+        db_target.execute(f"INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ('{c[2]}','{determine_year(c[4])}','{value}','{c[4]}','{c[5]}',{comment});")
+    print("\ndone.")
