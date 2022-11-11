@@ -207,7 +207,6 @@ def transfer_birds(db_source, db_target):
                 db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_packing',{rfid_packing});")
             if rfid_desinfectant != "'N/A'":
                 db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_desinfectant',{rfid_desinfectant});")
-    print("\ndone.")
 
 def transfer_measures(db_source, db_target):
     print(f"{time.asctime()} | Transferring measures...")
@@ -229,7 +228,6 @@ def transfer_measures(db_source, db_target):
                 db_target.execute(f"INSERT INTO measures (event_id, name, value, raw_value) VALUES ({event_id},'{m[2]}','{m[4]}','{m[5]}');")
             except pymysql.err.IntegrityError:
                 pass
-    print("\ndone.")
 
 def transfer_comments(db_source, db_target):
     print(f"{time.asctime()} | Transferring comments...")
@@ -249,7 +247,6 @@ def transfer_comments(db_source, db_target):
             except pymysql.err.IntegrityError:
                 # print(f"Individual {c[1]} does not exist")
                 pass
-    print("\ndone.")
 
 def transfer_creation_detection(db_source, db_target, source):
     print(f"{time.asctime()} | Transferring detections...", end="")
@@ -285,7 +282,6 @@ def transfer_bird_manips(db_source, db_target):
         print(f"\t- {round((i / n_manips) * 100)}% completed ({i} manips)\r", end="")
         comment = 'NULL' if missing_data(m[3]) else f"'{m[3]}'"
         db_target.execute(f"INSERT INTO bird_manips (rfid, manip, comment) VALUES ('{m[1]}','{m[2]}',{comment}) ON DUPLICATE KEY UPDATE rfid = rfid;")
-    print("\ndone.")
 
 def transfer_cycling_types(db_target):
     print(f"{time.asctime()} | Transferring cycling types...", end="")
@@ -309,4 +305,3 @@ def transfer_cycling(db_source, db_target):
         comment = f"'{c[6]}'" if not missing_data(c[6]) else 'NULL'
         value = "S" if c[3] == "Succes" else "F"
         db_target.execute(f"INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ('{c[2]}','{determine_year(c[4])}','{value}','{c[4]}','{c[5]}',{comment});")
-    print("\ndone.")
