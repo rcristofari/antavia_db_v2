@@ -209,7 +209,7 @@ def transfer_birds(db_source, db_target):
                 db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_desinfectant',{rfid_desinfectant});")
 
 def transfer_measures(db_source, db_target):
-    print(f"{time.asctime()} | Transferring measures...")
+    print(f"{time.asctime()} | Transferring measures:")
     measures = db_source.fetchall("SELECT * FROM measures;")
     n_measures = len(measures)
     print(f"\t- loaded {n_measures} data points")
@@ -230,7 +230,7 @@ def transfer_measures(db_source, db_target):
                 pass
 
 def transfer_comments(db_source, db_target):
-    print(f"{time.asctime()} | Transferring comments...")
+    print(f"{time.asctime()} | Transferring comments:")
     comments = db_source.fetchall("SELECT * FROM commentaire;")
     n_comments = len(comments)
     print(f"\t- loaded {n_comments} comments")
@@ -274,7 +274,7 @@ def transfer_creation_detection(db_source, db_target, source):
     print("done.")
 
 def transfer_bird_manips(db_source, db_target):
-    print(f"{time.asctime()} | Transferring birds manipulations...")
+    print(f"{time.asctime()} | Transferring birds manipulations:")
     manips = db_source.fetchall("SELECT * FROM manipulations where manipulations_possibles_id != '' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0) and manipulations_possibles_id in (SELECT nom from manipulations_possibles where supprime = 0);")
     n_manips = len(manips)
     print(f"\t- loaded {n_manips} manips")
@@ -296,7 +296,7 @@ def transfer_cycling_types(db_target):
     print("done.")
 
 def transfer_cycling(db_source, db_target):
-    print(f"{time.asctime()} | Transferring cycles...")
+    print(f"{time.asctime()} | Transferring cycles:")
     cycling = db_source.fetchall("SELECT * FROM evenements WHERE date_debut > '1970-01-01' AND date_fin > '1970-01-01' AND supprime = 0 and evenements_possibles_id = 'Breeding' and animaux_id in (select identifiant_transpondeur from animaux where supprime = 0);")
     n_cycles = len(cycling)
     print(f"\t- loaded {n_cycles} cycles")
