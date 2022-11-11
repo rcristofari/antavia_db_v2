@@ -1,16 +1,6 @@
 import pymysql
 from functools import wraps
 
-# def drop_database(new_db):
-#     query = "DROP DATABASE " + str(new_db)
-#     return query
-#
-#
-# def creation_database(new_db):
-#     query = "CREATE DATABASE IF NOT EXISTS " + str(new_db)
-#     return query
-
-
 class MysqlConnect(object):
 
     def __init__(self, usr, pwd, host, db, port):
