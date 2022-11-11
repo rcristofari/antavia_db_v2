@@ -182,7 +182,7 @@ def transfer_birds(db_source, db_target):
 
         db_target.execute(f"INSERT INTO birds (rfid, name, sex, birth_year, birth_year_type, rfid_date, ft_date, current_loc, last_detection, alarm, death_date, dead, ring_number, rfid_stage) VALUES ({rfid},{name},{sex},{birth_year},{birth_year_type},{rfid_date},{ft_date},{current_loc},{last_detection},{alarm},{death_date},{dead},{ring_number},{rfid_stage});")
 
-        print(f"\t- {round((i/n_birds)*100)}% completed ({i} birds)\r", end="")
+        print(f"\t- {round((i/n_birds)*100)}% completed ({i+1} birds)\r", end="")
 
         # Insert the corresponding events:
         rfid_packing = f"'{b[29]}'"
@@ -214,7 +214,7 @@ def transfer_measures(db_source, db_target):
     n_measures = len(measures)
     print(f"\t- loaded {n_measures} data points")
     for i, m in enumerate(measures):
-        print(f"\t- {round((i / n_measures) * 100)}% completed ({i} data points)\r", end="")
+        print(f"\t- {round((i / n_measures) * 100)}% completed ({i+1} data points)\r", end="")
         event = db_target.fetchall(f"SELECT id FROM events where rfid = '{m[1]}' and event_date = '{m[3]}';")
         if event:
             event_id = event[0][0]
@@ -235,7 +235,7 @@ def transfer_comments(db_source, db_target):
     n_comments = len(comments)
     print(f"\t- loaded {n_comments} comments")
     for i, c in enumerate(comments):
-        print(f"\t- {round((i / n_comments) * 100)}% completed ({i} comments)\r", end="")
+        print(f"\t- {round((i / n_comments) * 100)}% completed ({i+1} comments)\r", end="")
         if c[2] is not None and not any(x == c[2] for x in ("test", "N/A", "")):
             comment = c[2].replace('"', "").replace("'", "")
             date = 'NULL' if missing_data(c[4]) else f"'{c[4]}'"
@@ -279,7 +279,7 @@ def transfer_bird_manips(db_source, db_target):
     n_manips = len(manips)
     print(f"\t- loaded {n_manips} manips")
     for i, m in enumerate(manips):
-        print(f"\t- {round((i / n_manips) * 100)}% completed ({i} manips)\r", end="")
+        print(f"\t- {round((i / n_manips) * 100)}% completed ({i+1} manips)\r", end="")
         comment = 'NULL' if missing_data(m[3]) else f"'{m[3]}'"
         db_target.execute(f"INSERT INTO bird_manips (rfid, manip, comment) VALUES ('{m[1]}','{m[2]}',{comment}) ON DUPLICATE KEY UPDATE rfid = rfid;")
 
@@ -301,7 +301,7 @@ def transfer_cycling(db_source, db_target):
     n_cycles = len(cycling)
     print(f"\t- loaded {n_cycles} cycles")
     for i, c in enumerate(cycling):
-        print(f"\t- {round((i / n_cycles) * 100)}% completed ({i} cycles)\r", end="")
+        print(f"\t- {round((i / n_cycles) * 100)}% completed ({i+1} cycles)\r", end="")
         comment = f"'{c[6]}'" if not missing_data(c[6]) else 'NULL'
         value = "S" if c[3] == "Succes" else "F"
         db_target.execute(f"INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ('{c[2]}','{determine_year(c[4])}','{value}','{c[4]}','{c[5]}',{comment});")
