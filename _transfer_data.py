@@ -135,30 +135,33 @@ def transfer_birds(db_source, db_target):
     for i, b in enumerate(birds):
         rfid = f"'{b[1]}'"
         name = f"'TEST_{b[1][-12:]}'" if b[3].startswith("TEST") else f"'{b[3]}'"
-        sex = "NULL" if missing_data(b[6]) else f"'{b[6].replace('?', 'obs')}'"
+        sex = 'NULL' if missing_data(b[6]) else f"'{b[6].replace('?', 'obs')}'"
         rfid_stage = "'N/A'" if missing_data(b[14]) else f"'{b[14]}'"
-        date = 'NULL' if any(x == b[2] for x in ("0000-00-00", "1970-01-01")) else b[2]
-        # Manage the fish-tag data (non-RFID individuals)
-        if b[1].startswith("A 9"): # FT birds
-            rfid_date = 'NULL'
-            ft_date = f"'{date}'"
-            try:
-                birth_year = date.year
-                birth_year_type = "'obs'"
-                event_type = "'fish-tagging'"
-                rfid_stage = "'P-Brooding'"
-            except AttributeError:
-                birth_year = 'NULL'
-                birth_year_type = 'NULL'
-        # Regular RFID individuals
+
+        if any(x == b[2] for x in ("NULL", "0000-00-00", "1970-01-01")):
+            date, ft_date, rfid_date, birth_year, birth_year_type = 'NULL', 'NULL', 'NULL', 'NULL', 'NULL'
         else:
-            rfid_date = f"'{date}'"
-            ft_date = 'NULL'
-            birth_year, birth_year_type = birth_year_determination(date, rfid_stage)
-            event_type = "'pit-tagging'"
+            if b[1].startswith("A 9"):
+                ft_date = f"'{b[2]}'"
+                rfid_date = 'NULL'
+                try:
+                    birth_year = b[2].year
+                    birth_year_type = "'obs'"
+                    event_type = "'fish-tagging'"
+                    rfid_stage = "'P-Brooding'"
+                except AttributeError:
+                    birth_year = 'NULL'
+                    birth_year_type = 'NULL'
+            else:
+                rfid_date = f"'{b[2]}'"
+                ft_date = 'NULL'
+                birth_year, birth_year_type = birth_year_determination(b[2], rfid_stage)
+                event_type = "'pit-tagging'"
+
         dead = b[9]
         death_date = 'NULL'
         alarm = 'NULL' if missing_data(b[7]) else "'CAPTURE'"
+
         # Fix ring number:
         if b[13] == '1_Bague':
             ring_number = name
@@ -167,6 +170,7 @@ def transfer_birds(db_source, db_target):
         else:
             ring_number = 'NULL'
         last_detection = 'NULL' if missing_data(b[5]) else f"'{b[5]}'"
+
         # Current location:
         if b[12] == 0:
             current_loc = "'SEA'"
@@ -184,18 +188,26 @@ def transfer_birds(db_source, db_target):
         rfid_desinfectant = f"'{b[30]}'"
         handler = "'N/A'" if missing_data(b[16]) else f"'{b[16]}'"
         rfid_loc = 'NULL' if missing_data(b[15]) else f"'{b[15]}'"
-        event_date = ft_date if rfid_date == 'NULL' else rfid_date
+
+        if rfid_date != 'NULL':
+            event_date = rfid_date
+        elif ft_date != 'NULL':
+            event_date = ft_date
+        else:
+            event_date = 'NULL'
 
         # pit / fish-tagging event:
-        db_target.execute(f"INSERT INTO events (rfid, event_date, event_type, stage, location, handler) VALUES ({rfid},{event_date},{event_type},{rfid_stage},{rfid_loc},{handler});")
+        if event_date != "NULL":
+            db_target.execute(f"INSERT INTO events (rfid, event_date, event_type, stage, location, handler) VALUES ({rfid},{event_date},{event_type},{rfid_stage},{rfid_loc},{handler});")
 
-        #Add the pit tag conditioning values as measures
-        event_id = db_target.last_id()
-        if rfid_packing != "'N/A'":
-            db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_packing',{rfid_packing});")
-        if rfid_desinfectant != "'N/A'":
-            db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_desinfectant',{rfid_desinfectant});")
-    print("done.")
+            #Add the pit tag conditioning values as measures
+            event_id = db_target.last_id()
+            if rfid_packing != "'N/A'":
+                db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_packing',{rfid_packing});")
+            if rfid_desinfectant != "'N/A'":
+                db_target.execute(f"INSERT INTO measures (event_id, name, value) VALUES ({event_id},'rfid_desinfectant',{rfid_desinfectant});")
+
+    print("\ndone.")
 
 
 
