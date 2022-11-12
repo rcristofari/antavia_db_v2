@@ -3,7 +3,7 @@ from _tools import *
 import csv
 
 def transfer_colonies(db_target):
-    print(f"{time.asctime()} | Transferring colonies...", end="")
+    print(f"{time.asctime()} | Transferring colonies...", end="", flush=True)
     colonies = [['SEA', 'At sea', 'Somewhere in the Southern Ocean'],
                     ['BDM', 'Crozet', 'Baie du marin'],
                     ['CDC', 'Crozet', 'Crique de la Chaloupe'],
@@ -16,7 +16,7 @@ def transfer_colonies(db_target):
     print("done.")
 
 def transfer_antennas(db_target):
-    print(f"{time.asctime()} | Transferring antennas...", end="")
+    print(f"{time.asctime()} | Transferring antennas...", end="", flush=True)
     antennas = [['BretelleSud_Mer', 'Bretelle sud Mer', 'BDM', 'Mer'],
                 ['BretelleSud_Terre', 'Bretelle sud Terre', 'BDM', 'Terre'],
                 ['Autoroute_Mer', 'Autoroute Mer', 'BDM', 'Mer'],
@@ -30,7 +30,7 @@ def transfer_antennas(db_target):
     print("done.")
 
 def transfer_locations(db_source, db_target):
-    print(f"{time.asctime()} | Transferring locations...", end="")
+    print(f"{time.asctime()} | Transferring locations...", end="", flush=True)
     loc_names = [x[0] for x in db_source.fetchall("SELECT nom FROM lieux_transpondage;")]
     colony = ["RAT" if any(x == i for i in ("Guetteur", "Lac", "Ratmanoff")) else "BDM" for x in loc_names]
     locs = dict(zip(loc_names, colony))
@@ -46,21 +46,21 @@ def transfer_locations(db_source, db_target):
     print("done.")
 
 def transfer_handlers(db_source, db_target):
-    print(f"{time.asctime()} | Transferring handlers...", end="")
+    print(f"{time.asctime()} | Transferring handlers...", end="", flush=True)
     handlers = db_source.fetchall("SELECT nom, description FROM manipulateurs;")
     for h in handlers:
         db_target.execute(f"INSERT INTO handlers (name, description) VALUES ('{h[0]}', '{h[1]}');")
     print("done.")
 
 def transfer_manip_classes(db_target):
-    print(f"{time.asctime()} | Transferring manipulation classes...", end="")
+    print(f"{time.asctime()} | Transferring manipulation classes...", end="", flush=True)
     class_list = ["Puli", "EarlyLate", "FIDH", "Other", "OtherPrograms", "Tests"]
     for i in class_list:
         db_target.execute(f"INSERT INTO manip_classes (class) VALUES ('{i}');")
     print("done.")
 
 def transfer_manip(db_target):
-    print(f"{time.asctime()} | Transferring manipulations...", end="")
+    print(f"{time.asctime()} | Transferring manipulations...", end="", flush=True)
     csv_file = csv.reader(open("csv_files/manipulations_possibles.csv"))
     next(csv_file)
     for row in csv_file:
@@ -68,7 +68,7 @@ def transfer_manip(db_target):
     print("done.")
 
 def transfer_stage(db_source, db_target):
-    print(f"{time.asctime()} | Transferring stage...", end="")
+    print(f"{time.asctime()} | Transferring stage...", end="", flush=True)
     stages = db_source.fetchall("SELECT age, description FROM stade_transpondage;")
     for i, s in enumerate(stages):
         if s[0].startswith("A-"):
@@ -82,7 +82,7 @@ def transfer_stage(db_source, db_target):
     print("done.")
 
 def transfer_alarms(db_target):
-    print(f"{time.asctime()} | Transferring alarms...", end="")
+    print(f"{time.asctime()} | Transferring alarms...", end="", flush=True)
     alarms = [["CAPTURE", "Catch the bird if leaving colony"],
               ["FOLLOW", "Follow bird if entering colony"],
               ["VISUAL CONTROL", "Check body condition"]]
@@ -91,7 +91,7 @@ def transfer_alarms(db_target):
     print("done.")
 
 def transfer_event_classes(db_target):
-    print(f"{time.asctime()} | Transferring event classes...", end="")
+    print(f"{time.asctime()} | Transferring event classes...", end="", flush=True)
     events = [['Capture', 'The bird was captured and handled'],
          ['Visual control', 'An observation without handling'],
          ['Marking', 'The bird was marked without capture']]
@@ -100,7 +100,7 @@ def transfer_event_classes(db_target):
     print("done.")
 
 def transfer_event_types(db_target):
-    print(f"{time.asctime()} | Transferring event types...", end="")
+    print(f"{time.asctime()} | Transferring event types...", end="", flush=True)
     events = [['Capture','Pit-tagging'],
               ['Capture','Fish-tagging'],
               ['Capture','Recapture'],
@@ -112,7 +112,7 @@ def transfer_event_types(db_target):
     print("done.")
 
 def transfer_measure_types(db_source, db_target):
-    print(f"{time.asctime()} | Transferring measure types...", end="")
+    print(f"{time.asctime()} | Transferring measure types...", end="", flush=True)
     measures = [list(x) for x in db_source.fetchall("SELECT class, var, unit, description FROM measure_types;")]
     measures += [['marking','visual identity','cat','One or two flipper bands'],
                   ['rfid_data', 'rfid_packing', 'cat', 'Packing of pits before being implanted'],
@@ -182,7 +182,8 @@ def transfer_birds(db_source, db_target):
 
         db_target.execute(f"INSERT INTO birds (rfid, name, sex, birth_year, birth_year_type, rfid_date, ft_date, current_loc, last_detection, alarm, death_date, dead, ring_number, rfid_stage) VALUES ({rfid},{name},{sex},{birth_year},{birth_year_type},{rfid_date},{ft_date},{current_loc},{last_detection},{alarm},{death_date},{dead},{ring_number},{rfid_stage});")
 
-        print(f"\t- {round((i/n_birds)*100)}% completed ({i+1} birds)\r", end="")
+        if i%100 == 0:
+            print(f"\t- {round((i/n_birds)*100)}% completed ({i} birds)\r", end="")
 
         # Insert the corresponding events:
         rfid_packing = f"'{b[29]}'"
@@ -214,7 +215,8 @@ def transfer_measures(db_source, db_target):
     n_measures = len(measures)
     print(f"\t- loaded {n_measures} data points")
     for i, m in enumerate(measures):
-        print(f"\t- {round((i / n_measures) * 100)}% completed ({i+1} data points)\r", end="")
+        if i%100 == 0:
+            print(f"\t- {round((i / n_measures) * 100)}% completed ({i} data points)\r", end="")
         event = db_target.fetchall(f"SELECT id FROM events where rfid = '{m[1]}' and event_date = '{m[3]}';")
         if event:
             event_id = event[0][0]
@@ -235,7 +237,8 @@ def transfer_comments(db_source, db_target):
     n_comments = len(comments)
     print(f"\t- loaded {n_comments} comments")
     for i, c in enumerate(comments):
-        print(f"\t- {round((i / n_comments) * 100)}% completed ({i+1} comments)\r", end="")
+        if i%100 == 0:
+            print(f"\t- {round((i / n_comments) * 100)}% completed ({i} comments)\r", end="")
         if c[2] is not None and not any(x == c[2] for x in ("test", "N/A", "")):
             comment = c[2].replace('"', "").replace("'", "")
             date = 'NULL' if missing_data(c[4]) else f"'{c[4]}'"
@@ -248,11 +251,11 @@ def transfer_comments(db_source, db_target):
                 # print(f"Individual {c[1]} does not exist")
                 pass
 
-def transfer_creation_detection(db_source, db_target, source):
-    print(f"{time.asctime()} | Transferring detections...", end="")
+def transfer_create_detections(db_target, source):
+    print(f"{time.asctime()} | Transferring detections...", end="", flush=True)
     query = "CREATE TABLE detections (" \
                     "id INT AUTO_INCREMENT PRIMARY KEY " \
-                ") AS " \
+                ")  ENGINE=InnoDB DEFAULT CHARSET=utf8 AS " \
                     "SELECT " \
                         "DISTINCT animaux.identifiant_transpondeur AS rfid, " \
                         "CAST(antenne_id AS SIGNED) AS antenna_id, " \
@@ -263,10 +266,12 @@ def transfer_creation_detection(db_source, db_target, source):
                         "ON detections.animaux_id = animaux.id " \
                     "WHERE detections.supprime = 0 " \
                         "AND detections.detection_type = 'ORIGINAL' " \
-                        "AND animaux.supprime = 0;"
+                        "AND animaux.supprime = 0 "# \
+                        #"LIMIT 10000;"
     db_target.execute(query)
     print("done.")
-    print(f"{time.asctime()} | Indexing detections...", end="")
+    print(f"{time.asctime()} | Indexing detections...", end="", flush=True)
+    db_target.execute("ALTER TABLE detections MODIFY antenna_id INTEGER;")
     db_target.execute("ALTER TABLE detections ADD FOREIGN KEY (rfid) REFERENCES birds(rfid);")
     db_target.execute("ALTER TABLE detections ADD FOREIGN KEY (antenna_id) REFERENCES antennas(id);")
     db_target.execute("ALTER TABLE detections ADD INDEX dtime (rfid ASC, dtime ASC);")
@@ -279,12 +284,13 @@ def transfer_bird_manips(db_source, db_target):
     n_manips = len(manips)
     print(f"\t- loaded {n_manips} manips")
     for i, m in enumerate(manips):
-        print(f"\t- {round((i / n_manips) * 100)}% completed ({i+1} manips)\r", end="")
+        if i%100 == 0:
+            print(f"\t- {round((i / n_manips) * 100)}% completed ({i} manips)\r", end="")
         comment = 'NULL' if missing_data(m[3]) else f"'{m[3]}'"
         db_target.execute(f"INSERT INTO bird_manips (rfid, manip, comment) VALUES ('{m[1]}','{m[2]}',{comment}) ON DUPLICATE KEY UPDATE rfid = rfid;")
 
 def transfer_cycling_types(db_target):
-    print(f"{time.asctime()} | Transferring cycling types...", end="")
+    print(f"{time.asctime()} | Transferring cycling types...", end="", flush=True)
     cycles = [['arrival', 'Date of arrival in the colony for the first time after winter'],
              ['breeding', 'Date of the start of the breeding shift in colony'],
              ['laying', 'Date of laying'],
@@ -301,7 +307,8 @@ def transfer_cycling(db_source, db_target):
     n_cycles = len(cycling)
     print(f"\t- loaded {n_cycles} cycles")
     for i, c in enumerate(cycling):
-        print(f"\t- {round((i / n_cycles) * 100)}% completed ({i+1} cycles)\r", end="")
+        if i%100 == 0:
+            print(f"\t- {round((i / n_cycles) * 100)}% completed ({i} cycles)\r", end="")
         comment = f"'{c[6]}'" if not missing_data(c[6]) else 'NULL'
         value = "S" if c[3] == "Succes" else "F"
         db_target.execute(f"INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ('{c[2]}','{determine_year(c[4])}','{value}','{c[4]}','{c[5]}',{comment});")
