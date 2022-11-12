@@ -310,6 +310,7 @@ def transfer_cycling(db_source, db_target):
         if i%100 == 0:
             print(f"\t- {round((i / n_cycles) * 100)}% completed ({i} cycles)\r", end="")
         comment = f"'{c[6]}'" if not missing_data(c[6]) else 'NULL'
+        comment = comment.replace('"', "").replace("'", "")
         value = "S" if c[3] == "Succes" else "F"
         db_target.execute(f"INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ('{c[2]}','{determine_year(c[4])}','{value}','{c[4]}','{c[5]}',{comment});")
 
