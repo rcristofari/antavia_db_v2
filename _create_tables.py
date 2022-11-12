@@ -244,7 +244,7 @@ create_birds = "CREATE TABLE IF NOT EXISTS birds (" \
 #----------------------------------------------------------------------------------------------------------------------#
 # CYCLES
 
-create_breeding = "CREATE TABLE breeding("\
+create_couples = "CREATE TABLE couples("\
             "id int(10) PRIMARY KEY AUTO_INCREMENT," \
            "season int(4) NOT NULL," \
            "female_id varchar(64) DEFAULT NULL," \
@@ -256,13 +256,13 @@ create_breeding = "CREATE TABLE breeding("\
            "KEY female_id (female_id), " \
            "KEY male_id (male_id), " \
            "KEY offspring_id (offspring_id), " \
-           "CONSTRAINT FK_breeding_REF_female_id " \
+           "CONSTRAINT FK_couples_REF_female_id " \
            "FOREIGN KEY (female_id) " \
            "REFERENCES birds (rfid) ON DELETE CASCADE ON UPDATE CASCADE," \
-           "CONSTRAINT FK_breeding_REF_male_id " \
+           "CONSTRAINT FK_couples_REF_male_id " \
            "FOREIGN KEY (male_id) " \
            "REFERENCES birds (rfid) ON DELETE CASCADE ON UPDATE CASCADE," \
-           "CONSTRAINT FK_breeding_REF_offspring_id " \
+           "CONSTRAINT FK_couples_REF_offspring_id " \
            "FOREIGN KEY (offspring_id) " \
            "REFERENCES birds (rfid) ON DELETE CASCADE ON UPDATE CASCADE" \
            ") ENGINE= InnoDB DEFAULT CHARSET=utf8;"

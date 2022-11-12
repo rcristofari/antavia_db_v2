@@ -312,3 +312,20 @@ def transfer_cycling(db_source, db_target):
         comment = f"'{c[6]}'" if not missing_data(c[6]) else 'NULL'
         value = "S" if c[3] == "Succes" else "F"
         db_target.execute(f"INSERT INTO cycling (rfid, season, value, start_dtime, end_dtime, comment) VALUES ('{c[2]}','{determine_year(c[4])}','{value}','{c[4]}','{c[5]}',{comment});")
+
+def transfer_couples(db_source, db_target):
+    print(f"{time.asctime()} | Transferring couples:")
+    couples = db_source.fetchall("SELECT * FROM couples;")
+    n_couples = len(couples)
+    print(f"\t- loaded {n_couples} couples")
+    for i, c in enumerate(couples):
+        print(f"\t- {round((i / n_couples) * 100)}% completed ({i+1} couples)\r", end="")
+        female = f"'{c[2]}'" if c[2] else 'NULL'
+        male = f"'{c[3]}'" if c[3] else 'NULL'
+        offspring = f"'{c[4]}'" if c[4] else 'NULL'
+        outcome = f"'{c[5]}'" if c[5] else 'NULL'
+        pair_type = "'observed'" if c[2] and c[3] else 'NULL'
+        offspring_type = "'observed'" if c[4] else 'NULL'
+        if not c[6]:
+            pair_type, offspring_type = 'NULL', 'NULL'
+        db_target.execute(f"INSERT INTO couples (season, female_id, male_id, offspring_id, outcome, pair_type, offspring_type) VALUES ({c[1]},{female},{male},{offspring},{outcome},{pair_type},{offspring_type});")
